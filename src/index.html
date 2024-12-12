@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>W2G Room Creator</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Create a W2G Room</h1>
+        <input type="text" id="videoUrl" placeholder="Enter the video URL" />
+        <button id="createRoom">Create Room</button>
+        <button id="copyButton" style="display: none;">Copy Link</button>
+        <textarea id="roomLink" rows="4" cols="50" readonly style="display: none;"></textarea>
+    </div>
+    <div id="notification" class="notification"></div>
+    <script src="renderer.js"></script>
+</body>
+</html>
