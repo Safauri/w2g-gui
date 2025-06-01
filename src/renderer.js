@@ -1,69 +1,72 @@
-function showNotification(message, type = 'info', duration = 2000) {
-    const notification = document.getElementById('notification');
-    notification.textContent = message;
-
-    notification.className = `notification notification-${type} notification-show`;
-    notification.style.opacity = '1';
-
-    setTimeout(() => {
-        notification.style.opacity = '0';
+const N = {
+        T: {
+            INFO: 'info',
+            SUCCESS: 'success',
+            ERROR: 'error',
+            WARNING: 'warning'
+        },
+        D: 2e3,
+        F: 400
+    },
+    E = {
+        n: document.getElementById('notification'),
+        r: document.getElementById('roomLink'),
+        c: document.getElementById('copyButton'),
+        b: document.getElementById('createRoom'),
+        v: document.getElementById('videoUrl')
+    },
+    q = [],
+    notify = (m, t = N.T.INFO, d = N.D) => {
+        q.push({
+            m,
+            t,
+            d
+        });
+        !showing && showNext()
+    },
+    showNext = () => {
+        if (!q.length) return showing = false;
+        showing = true;
+        const {
+            m,
+            t,
+            d
+        } = q.shift();
+        E.n.textContent = m;
+        E.n.className = `notification notification-${t} notification-show`;
+        E.n.style.opacity = 1;
         setTimeout(() => {
-            notification.classList.remove('notification-show');
-        }, 400);
-    }, duration);
-}
-
-async function copyToClipboard(text) {
-    try {
-        await navigator.clipboard.writeText(text);
-        showNotification('Room link copied to clipboard!', 'success');
-    } catch (err) {
-        console.error('Failed to copy: ', err);
-        showNotification('Failed to copy the room link.', 'error');
-    }
-}
-
-function showRoomLink(roomLink) {
-    const roomLinkTextarea = document.getElementById('roomLink');
-    roomLinkTextarea.value = roomLink;
-    roomLinkTextarea.style.display = 'block';
-    document.getElementById('copyButton').style.display = 'inline-block';
-}
-
-function showError(error) {
-    console.error('Error creating room:', error);
-    const roomLinkTextarea = document.getElementById('roomLink');
-    roomLinkTextarea.value = `Error creating room: ${error.message}`;
-    roomLinkTextarea.style.display = 'block';
-    document.getElementById('copyButton').style.display = 'none';
-    showNotification('Error creating room. Please try again.', 'error');
-}
-
-async function createRoom() {
-    const videoUrl = document.getElementById('videoUrl').value.trim();
-
-    if (!videoUrl) {
-        showNotification('Please enter a valid video URL.', 'warning');
-        return;
-    }
-
-    try {
-        const roomLink = await window.electron.invokeCreateRoom(videoUrl);
-        showRoomLink(roomLink);
-        showNotification('Room created successfully!', 'success');
-    } catch (error) {
-        showError(error);
-    }
-}
-
-// Event listeners
-document.getElementById('createRoom').addEventListener('click', createRoom);
-
-document.getElementById('copyButton').addEventListener('click', () => {
-    const roomLink = document.getElementById('roomLink').value;
-    if (roomLink) {
-        copyToClipboard(roomLink);
-    } else {
-        showNotification('No room link available to copy.', 'warning');
-    }
-});
+            E.n.style.opacity = 0;
+            setTimeout(() => {
+                E.n.classList.remove('notification-show');
+                showNext()
+            }, N.F)
+        }, d)
+    },
+    copy = async t => {
+        try {
+            await navigator.clipboard.writeText(t);
+            notify('Link copied!', N.T.SUCCESS)
+        } catch {
+            notify('Copy failed', N.T.ERROR)
+        }
+    }, createRoom = async () => {
+        const u = E.v.value.trim();
+        if (!u) return notify('Enter URL', N.T.WARNING);
+        try {
+            E.r.value = await window.electron.invokeCreateRoom(u);
+            E.r.style.display = 'block';
+            E.c.style.display = 'inline-block';
+            notify('Room created!', N.T.SUCCESS)
+        } catch (e) {
+            E.r.value = `Error: ${e.message}`;
+            E.r.style.display = 'block';
+            E.c.style.display = 'none';
+            notify('Create failed', N.T.ERROR)
+        }
+    };
+let showing = false;
+E.b.addEventListener('click', createRoom);
+E.c.addEventListener('click', () => E.r.value ? copy(E.r.value) : notify('No link', N.T.WARNING));
+E.v.addEventListener('keydown', e => e.key === 'Enter' && createRoom());
+E.r.style.display = E.c.style.display = 'none';
